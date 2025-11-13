@@ -1,0 +1,29 @@
+server:
+  port: "8080"
+
+database:
+  postgresql:
+    host: "postgres"
+    port: "5432"
+    user: "postgres"
+    password: "password"
+    dbname: "petrochem_db"
+    sslmode: "disable"
+  clickhouse:
+    host: "clickhouse"
+    port: "9000"
+    user: "default"
+    password: ""
+    database: "petrochemical"
+
+redis:
+  host: "redis"
+  port: "6379"
+  password: ""
+  db: 0
+
+mqtt:
+  broker: "tcp://mqtt:1883"
+  client_id: "petrochem_platform"
+  username: ""
+  password: ""

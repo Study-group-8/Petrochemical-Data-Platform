@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мониторинг нефтехимического рынка России</title>
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+</head>
+
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 p-6">
+    <div id="app" class="max-w-7xl mx-auto">
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        <i data-lucide="building-2" class="text-blue-600"></i>
+                        Мониторинг нефтехимического рынка России
+                    </h1>
+                    <p class="text-gray-600 mt-2">Система сбора и анализа данных по ценам и объемам предложения</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+                <div class="md:col-span-2 relative">
+                    <i data-lucide="search" class="absolute left-3 top-3 text-gray-400"></i>
+                    <input type="text" id="searchInput" placeholder="Поиск по компаниям или продуктам..."
+                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                </div>
+                <select id="sizeFilter"
+                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="">Все размеры</option>
+                    <option value="Крупная">Крупная</option>
+                    <option value="Средняя">Средняя</option>
+                    <option value="Малая">Малая</option>
+                </select>
+                <select id="typeFilter"
+                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="">Все типы</option>
+                    <option value="Производитель">Производитель</option>
+                    <option value="Дистрибьютор">Дистрибьютор</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 bg-white rounded-xl shadow-lg p-6 max-h-[800px] overflow-y-auto">
+                <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="filter" class="text-blue-600"></i>
+                    Компании (<span id="companyCount">0</span>)
+                </h2>
+                <div id="companiesList" class="space-y-2">
+                    <!-- Companies will be loaded here -->
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 space-y-6">
+                <div id="companyDetails" class="hidden">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 id="companyName" class="text-2xl font-bold text-gray-900"></h2>
+                                <p id="companyLocation" class="text-gray-600"></p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button id="exportBtn"
+                                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                                    <i data-lucide="download" class="w-4 h-4"></i>
+                                    Экспорт CSV
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="productsList" class="flex gap-2 mb-4">
+                            <!-- Products will be loaded here -->
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i data-lucide="dollar-sign" class="text-blue-600 w-5 h-5"></i>
+                                    <span class="text-sm text-gray-600">Средняя цена</span>
+                                </div>
+                                <p id="avgPrice" class="text-2xl font-bold text-gray-900">— ₽</p>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i data-lucide="package" class="text-green-600 w-5 h-5"></i>
+                                    <span class="text-sm text-gray-600">Средний объем</span>
+                                </div>
+                                <p id="avgVolume" class="text-2xl font-bold text-gray-900">— т</p>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i data-lucide="calendar" class="text-purple-600 w-5 h-5"></i>
+                                    <span class="text-sm text-gray-600">Период данных</span>
+                                </div>
+                                <p id="dataPeriod" class="text-2xl font-bold text-gray-900">— мес</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold mb-4">Динамика цен - <span id="selectedProduct">Продукт</span>
+                        </h3>
+                        <div id="priceChart" class="w-full h-80"></div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold mb-4">Объемы продаж - <span
+                                id="selectedProductVolume">Продукт</span></h3>
+                        <div id="volumeChart" class="w-full h-80"></div>
+                    </div>
+                </div>
+
+                <div id="marketOverview" class="bg-white rounded-xl shadow-lg p-12 text-center">
+                    <i data-lucide="building-2" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Выберите компанию для анализа</h3>
+                    <p class="text-gray-500">Выберите компанию из списка слева, чтобы просмотреть данные по ценам и
+                        объемам продаж</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 bg-blue-50 rounded-xl p-6 border border-blue-200">
+            <h3 class="font-semibold text-blue-900 mb-2">ℹ️ Информация о системе</h3>
+            <div class="text-sm text-blue-800 space-y-1">
+                <p>• <strong>База компаний:</strong> <span id="totalCompanies">15</span> компаний, ранжированных по
+                    размеру выручки</p>
+                <p>• <strong>Товарные группы:</strong> 9 категорий нефтехимической продукции</p>
+                <p>• <strong>Функции:</strong> Добавление данных вручную, генерация синтетических данных для
+                    демонстрации, экспорт в CSV</p>
+                <p>• <strong>Рекомендация:</strong> Начните анализ с крупных компаний (СИБУР, Нижнекамскнефтехим,
+                    Ангарская НХК)</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } = Recharts;
+
+        // База данных компаний
+        const companiesDatabase = [
+            {
+                id: 1,
+                name: "СИБУР Холдинг",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Полипропилен", "Полиэтилен", "МТБЭ", "Бутадиен"],
+                region: "Тюменская обл.",
+                revenue: 1200,
+                assetId: "СИБУР Холдинг_Тюменская обл."
+            },
+            {
+                id: 2,
+                name: "Нижнекамскнефтехим",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Синтетические каучуки", "Полиэтилен", "Стирол"],
+                region: "Татарстан",
+                revenue: 800,
+                assetId: "Нижнекамскнефтехим_Татарстан"
+            },
+            {
+                id: 3,
+                name: "Ангарская НХК (Роснефть)",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Нефтепродукты", "Полимеры", "Ароматика"],
+                region: "Восточная Сибирь",
+                revenue: 650,
+                assetId: "Ангарская НХК (Роснефть)_Восточная Сибирь"
+            },
+            {
+                id: 4,
+                name: "ЗапСибНефтехим",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Полипропилен", "Полиэтилен"],
+                region: "Тюменская обл.",
+                revenue: 550,
+                assetId: "ЗапСибНефтехим_Тюменская обл."
+            },
+            {
+                id: 5,
+                name: "Новокуйбышевская НХК",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Полипропилен", "Бутиловые каучуки", "МТБЭ"],
+                region: "Самарская обл.",
+                revenue: 480,
+                assetId: "Новокуйбышевская НХК_Самарская обл."
+            },
+            {
+                id: 6,
+                name: "Ставролен",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Полипропилен", "Полиэтилен"],
+                region: "Ставропольский край",
+                revenue: 420,
+                assetId: "Ставролен_Ставропольский край"
+            },
+            {
+                id: 7,
+                name: "Балтийский Химический Комплекс",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["ПЭВД", "Полистирол"],
+                region: "Ленинградская обл.",
+                revenue: 380,
+                assetId: "Балтийский Химический Комплекс_Ленинградская обл."
+            },
+            {
+                id: 8,
+                name: "Стерлитамакский НХЗ",
+                size: "Средняя",
+                type: "Производитель",
+                products: ["Каучуки", "Антиоксиданты", "МТБЭ"],
+                region: "Башкортостан",
+                revenue: 280,
+                assetId: "Стерлитамакский НХЗ_Башкортостан"
+            },
+            {
+                id: 9,
+                name: "Кемеровский КХЗ",
+                size: "Средняя",
+                type: "Производитель",
+                products: ["Кокс", "Бензол", "Нафталин"],
+                region: "Кемеровская обл.",
+                revenue: 220,
+                assetId: "Кемеровский КХЗ_Кемеровская обл."
+            }
+        ];
+
+        let selectedCompany = null;
+        let selectedProduct = '';
+        let priceData = [];
+        let volumeData = [];
+        let filteredCompanies = [...companiesDatabase];
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function () {
+            lucide.createIcons();
+
+            // Load companies
+            loadCompanies();
+
+            // Setup event listeners
+            setupEventListeners();
+
+            // Update company count
+            updateCompanyCount();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('searchInput').addEventListener('input', filterCompanies);
+            document.getElementById('sizeFilter').addEventListener('change', filterCompanies);
+            document.getElementById('typeFilter').addEventListener('change', filterCompanies);
+            document.getElementById('exportBtn').addEventListener('click', exportToCSV);
+        }
+
+        function loadCompanies() {
+            const companiesList = document.getElementById('companiesList');
+            companiesList.innerHTML = '';
+
+            filteredCompanies.forEach(company => {
+                const companyDiv = document.createElement('div');
+                companyDiv.className = 'border border-gray-200 rounded-lg overflow-hidden';
+                companyDiv.innerHTML = `
+                    <div class="p-4 hover:bg-blue-50 cursor-pointer transition-colors">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-gray-900">${company.name}</h3>
+                                <div class="flex gap-2 mt-1">
+                                    <span class="text-xs px-2 py-1 rounded ${getSizeClass(company.size)}">${company.size}</span>
+                                    <span class="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">${company.type}</span>
+                                </div>
+                            </div>
+                            <i data-lucide="chevron-down" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-gray-50 border-t hidden">
+                        <p class="text-sm text-gray-600 mb-2"><strong>Регион:</strong> ${company.region}</p>
+                        <p class="text-sm text-gray-600 mb-2"><strong>Продукты:</strong></p>
+                        <div class="flex flex-wrap gap-1 mb-3">
+                            ${company.products.map(product => `<span class="text-xs px-2 py-1 bg-white rounded border">${product}</span>`).join('')}
+                        </div>
+                        <button onclick="selectCompany('${company.id}')" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                            <i data-lucide="trending-up" class="w-4 h-4"></i>
+                            Анализировать данные
+                        </button>
+                    </div>
+                `;
+
+                // Add click handler for expand/collapse
+                const header = companyDiv.querySelector('.p-4');
+                const details = companyDiv.querySelector('.bg-gray-50');
+                const icon = companyDiv.querySelector('i[data-lucide="chevron-down"]');
+
+                header.addEventListener('click', function () {
+                    const isHidden = details.classList.contains('hidden');
+                    details.classList.toggle('hidden');
+                    icon.setAttribute('data-lucide', isHidden ? 'chevron-up' : 'chevron-down');
+                    lucide.createIcons();
+                });
+
+                companiesList.appendChild(companyDiv);
+            });
+
+            lucide.createIcons();
+        }
+
+        function selectCompany(companyId) {
+            const company = companiesDatabase.find(c => c.id == companyId);
+            if (!company) return;
+
+            selectedCompany = company;
+            selectedProduct = company.products[0] || '';
+            generateSyntheticData(company.id, selectedProduct);
+
+            // Update UI
+            document.getElementById('companyName').textContent = company.name;
+            document.getElementById('companyLocation').textContent = company.region;
+
+            // Load products
+            loadProducts(company);
+
+            // Show company details, hide market overview
+            document.getElementById('companyDetails').classList.remove('hidden');
+            document.getElementById('marketOverview').classList.add('hidden');
+
+            // Load real telemetry data
+            loadTelemetryData(company);
+        }
+
+        function loadProducts(company) {
+            const productsList = document.getElementById('productsList');
+            productsList.innerHTML = '';
+
+            company.products.forEach(product => {
+                const button = document.createElement('button');
+                button.className = `px-4 py-2 rounded-lg transition-colors ${selectedProduct === product
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`;
+                button.textContent = product;
+                button.onclick = () => {
+                    selectedProduct = product;
+                    generateSyntheticData(company.id, product);
+                    loadProducts(company);
+                    document.getElementById('selectedProduct').textContent = product;
+                    document.getElementById('selectedProductVolume').textContent = product;
+                };
+                productsList.appendChild(button);
+            });
+        }
+
+        function generateSyntheticData(companyId, product) {
+            const months = ['Янв 24', 'Фев 24', 'Мар 24', 'Апр 24', 'Май 24', 'Июн 24',
+                'Июл 24', 'Авг 24', 'Сен 24', 'Окт 24', 'Ноя 24'];
+
+            const basePrice = 50000 + Math.random() * 30000;
+            const baseVolume = 1000 + Math.random() * 5000;
+
+            priceData = months.map((month, i) => ({
+                month,
+                price: Math.round(basePrice * (1 + (Math.random() - 0.5) * 0.2)),
+                volume: Math.round(baseVolume * (1 + (Math.random() - 0.5) * 0.3))
+            }));
+
+            volumeData = [...priceData];
+
+            updateCharts();
+            updateStats();
+        }
+
+        function loadTelemetryData(company) {
+            // Load real telemetry data from our API
+            const sensorId = company.assetId; // Use assetId as sensorId for now
+
+            fetch(`http://localhost:8080/api/v1/telemetry/${sensorId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.data && data.data.length > 0) {
+                        // Convert API data to chart format
+                        priceData = data.data.slice(-50).map(item => ({
+                            timestamp: new Date(item.timestamp).toLocaleString('ru-RU'),
+                            price: item.value, // Using value as price for now
+                            volume: item.value // Using value as volume
+                        }));
+
+                        volumeData = [...priceData];
+
+                        updateCharts();
+                        updateStats();
+                        console.log('Loaded real telemetry data:', data.data.length, 'points');
+                    } else {
+                        console.log('No telemetry data found, using synthetic data');
+                        generateSyntheticData(company.id, selectedProduct);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading telemetry data:', error);
+                    console.log('Falling back to synthetic data');
+                    generateSyntheticData(company.id, selectedProduct);
+                });
+        }
+
+        function updateCharts() {
+            updatePriceChart();
+            updateVolumeChart();
+        }
+
+        function updatePriceChart() {
+            const chartContainer = document.getElementById('priceChart');
+            if (!chartContainer) return;
+
+            const chart = React.createElement(LineChart, { width: 800, height: 300, data: priceData }, [
+                React.createElement(CartesianGrid, { key: 'grid', strokeDasharray: '3 3' }),
+                React.createElement(XAxis, { key: 'x', dataKey: 'timestamp' }),
+                React.createElement(YAxis, { key: 'y' }),
+                React.createElement(Tooltip, {
+                    key: 'tooltip',
+                    formatter: (value) => [`${value.toLocaleString()} ₽/тонна`, 'Цена']
+                }),
+                React.createElement(Legend, { key: 'legend' }),
+                React.createElement(Line, {
+                    key: 'line',
+                    type: 'monotone',
+                    dataKey: 'price',
+                    stroke: '#3b82f6',
+                    strokeWidth: 2,
+                    name: 'Цена'
+                })
+            ]);
+
+            ReactDOM.render(chart, chartContainer);
+        }
+
+        function updateVolumeChart() {
+            const chartContainer = document.getElementById('volumeChart');
+            if (!chartContainer) return;
+
+            const chart = React.createElement(BarChart, { width: 800, height: 300, data: volumeData }, [
+                React.createElement(CartesianGrid, { key: 'grid', strokeDasharray: '3 3' }),
+                React.createElement(XAxis, { key: 'x', dataKey: 'timestamp' }),
+                React.createElement(YAxis, { key: 'y' }),
+                React.createElement(Tooltip, {
+                    key: 'tooltip',
+                    formatter: (value) => [`${value.toLocaleString()} тонн`, 'Объем']
+                }),
+                React.createElement(Legend, { key: 'legend' }),
+                React.createElement(Bar, {
+                    key: 'bar',
+                    dataKey: 'volume',
+                    fill: '#10b981',
+                    name: 'Объем'
+                })
+            ]);
+
+            ReactDOM.render(chart, chartContainer);
+        }
+
+        function updateStats() {
+            if (priceData.length > 0) {
+                const avgPrice = Math.round(priceData.reduce((a, b) => a + b.price, 0) / priceData.length);
+                const avgVolume = Math.round(volumeData.reduce((a, b) => a + b.volume, 0) / volumeData.length);
+
+                // Calculate data period in hours
+                const timestamps = priceData.map(d => new Date(d.timestamp).getTime());
+                const minTime = Math.min(...timestamps);
+                const maxTime = Math.max(...timestamps);
+                const hoursDiff = Math.round((maxTime - minTime) / (1000 * 60 * 60));
+
+                document.getElementById('avgPrice').textContent = `${avgPrice.toLocaleString()} ₽`;
+                document.getElementById('avgVolume').textContent = `${avgVolume.toLocaleString()} т`;
+                document.getElementById('dataPeriod').textContent = `${hoursDiff} ч`;
+            }
+        }
+
+        function filterCompanies() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const sizeFilter = document.getElementById('sizeFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+
+            filteredCompanies = companiesDatabase.filter(company => {
+                const matchesSearch = company.name.toLowerCase().includes(searchTerm) ||
+                    company.products.some(p => p.toLowerCase().includes(searchTerm));
+                const matchesSize = !sizeFilter || company.size === sizeFilter;
+                const matchesType = !typeFilter || company.type === typeFilter;
+                return matchesSearch && matchesSize && matchesType;
+            });
+
+            loadCompanies();
+            updateCompanyCount();
+        }
+
+        function updateCompanyCount() {
+            document.getElementById('companyCount').textContent = filteredCompanies.length;
+        }
+
+        function exportToCSV() {
+            if (!selectedCompany || priceData.length === 0) return;
+
+            const headers = ['Дата', 'Продукт', 'Цена (руб/тонна)', 'Объем (тонн)'];
+            const rows = priceData.map(d => [
+                d.timestamp,
+                selectedProduct,
+                d.price,
+                d.volume
+            ]);
+
+            const csvContent = headers.join(',') + '\n' +
+                rows.map(r => r.join(',')).join('\n');
+
+            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${selectedCompany.name}_${selectedProduct}_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+
+        function getSizeClass(size) {
+            switch (size) {
+                case 'Крупная': return 'bg-green-100 text-green-700';
+                case 'Средняя': return 'bg-yellow-100 text-yellow-700';
+                case 'Малая': return 'bg-gray-100 text-gray-700';
+                default: return 'bg-gray-100 text-gray-700';
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+</body>
+
+</html>
