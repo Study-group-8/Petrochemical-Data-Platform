@@ -49,8 +49,11 @@ services:
       - clickhouse
     environment:
       - CONFIG_PATH=/app/configs/config.yaml
+      - ADMIN_EXPORT_PASSWORD=${ADMIN_EXPORT_PASSWORD:-Petrochem2025!}
     volumes:
       - ./configs:/app/configs
+    env_file:
+      - .env
 
   simulator:
     build:

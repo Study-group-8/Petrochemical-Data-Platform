@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест Recharts</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/recharts@2.10.3/dist/Recharts.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .chart-container {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Тест работы Recharts</h1>
+    <div id="status"></div>
+
+    <h2>График линий (LineChart)</h2>
+    <div id="lineChart" class="chart-container"></div>
+
+    <h2>График столбцов (BarChart)</h2>
+    <div id="barChart" class="chart-container"></div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+
+        // Проверка загрузки библиотек
+        console.log('React:', typeof React);
+        console.log('ReactDOM:', typeof ReactDOM);
+        console.log('Recharts:', typeof Recharts);
+
+        let status = '<div class="status success"><strong>✓ Статус загрузки библиотек:</strong><br>';
+        status += 'React: ' + (typeof React !== 'undefined' ? '✓ Загружен' : '✗ Не загружен') + '<br>';
+        status += 'ReactDOM: ' + (typeof ReactDOM !== 'undefined' ? '✓ Загружен' : '✗ Не загружен') + '<br>';
+        status += 'Recharts: ' + (typeof Recharts !== 'undefined' ? '✓ Загружен' : '✗ Не загружен') + '</div>';
+        statusDiv.innerHTML = status;
+
+        if (typeof Recharts === 'undefined') {
+            statusDiv.innerHTML += '<div class="status error"><strong>✗ Ошибка:</strong> Recharts не загружен!</div>';
+        } else {
+            // Извлекаем компоненты
+            const { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = Recharts;
+
+            // Тестовые данные
+            const data = [
+                { name: 'Янв', price: 65000, volume: 3200 },
+                { name: 'Фев', price: 67000, volume: 3400 },
+                { name: 'Мар', price: 63000, volume: 3100 },
+                { name: 'Апр', price: 70000, volume: 3600 },
+                { name: 'Май', price: 72000, volume: 3800 },
+                { name: 'Июн', price: 68000, volume: 3500 }
+            ];
+
+            console.log('Test data:', data);
+
+            // Рендер LineChart
+            try {
+                const lineChartElement = React.createElement(
+                    ResponsiveContainer,
+                    { width: '100%', height: 300 },
+                    React.createElement(
+                        LineChart,
+                        { data: data },
+                        [
+                            React.createElement(CartesianGrid, { key: 'grid', strokeDasharray: '3 3' }),
+                            React.createElement(XAxis, { key: 'x', dataKey: 'name' }),
+                            React.createElement(YAxis, { key: 'y' }),
+                            React.createElement(Tooltip, { key: 'tooltip' }),
+                            React.createElement(Legend, { key: 'legend' }),
+                            React.createElement(Line, {
+                                key: 'line',
+                                type: 'monotone',
+                                dataKey: 'price',
+                                stroke: '#3b82f6',
+                                strokeWidth: 2,
+                                name: 'Цена (₽/тонна)'
+                            })
+                        ]
+                    )
+                );
+
+                ReactDOM.render(lineChartElement, document.getElementById('lineChart'));
+                console.log('LineChart rendered successfully');
+                statusDiv.innerHTML += '<div class="status success"><strong>✓ LineChart отрендерен успешно</strong></div>';
+            } catch (error) {
+                console.error('Error rendering LineChart:', error);
+                statusDiv.innerHTML += '<div class="status error"><strong>✗ Ошибка рендеринга LineChart:</strong> ' + error.message + '</div>';
+            }
+
+            // Рендер BarChart
+            try {
+                const barChartElement = React.createElement(
+                    ResponsiveContainer,
+                    { width: '100%', height: 300 },
+                    React.createElement(
+                        BarChart,
+                        { data: data },
+                        [
+                            React.createElement(CartesianGrid, { key: 'grid', strokeDasharray: '3 3' }),
+                            React.createElement(XAxis, { key: 'x', dataKey: 'name' }),
+                            React.createElement(YAxis, { key: 'y' }),
+                            React.createElement(Tooltip, { key: 'tooltip' }),
+                            React.createElement(Legend, { key: 'legend' }),
+                            React.createElement(Bar, {
+                                key: 'bar',
+                                dataKey: 'volume',
+                                fill: '#10b981',
+                                name: 'Объем (тонн)'
+                            })
+                        ]
+                    )
+                );
+
+                ReactDOM.render(barChartElement, document.getElementById('barChart'));
+                console.log('BarChart rendered successfully');
+                statusDiv.innerHTML += '<div class="status success"><strong>✓ BarChart отрендерен успешно</strong></div>';
+            } catch (error) {
+                console.error('Error rendering BarChart:', error);
+                statusDiv.innerHTML += '<div class="status error"><strong>✗ Ошибка рендеринга BarChart:</strong> ' + error.message + '</div>';
+            }
+        }
+    </script>
+</body>
+
+</html>

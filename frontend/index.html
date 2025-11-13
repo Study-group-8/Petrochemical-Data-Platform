@@ -5,8 +5,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мониторинг нефтехимического рынка России</title>
-    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            10%,
+            30%,
+            50%,
+            70%,
+            90% {
+                transform: translateX(-5px);
+            }
+
+            20%,
+            40%,
+            60%,
+            80% {
+                transform: translateX(5px);
+            }
+        }
+
+        .animate-shake {
+            animation: shake 0.5s;
+            border-color: #ef4444 !important;
+        }
+    </style>
 </head>
 
 <body class="bg-gradient-to-br from-slate-50 to-blue-50 p-6">
@@ -130,15 +160,75 @@
                     размеру выручки</p>
                 <p>• <strong>Товарные группы:</strong> 9 категорий нефтехимической продукции</p>
                 <p>• <strong>Функции:</strong> Добавление данных вручную, генерация синтетических данных для
-                    демонстрации, экспорт в CSV</p>
-                <p>• <strong>Рекомендация:</strong> Начните анализ с крупных компаний (СИБУР, Нижнекамскнефтехим,
-                    Ангарская НХК)</p>
+                    демонстрации, экспорт в CSV (защищён паролем)
+                    <button onclick="changePassword()"
+                        class="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors">
+                        <i data-lucide="settings" class="w-3 h-3 inline"></i> Изменить пароль
+                    </button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для ввода пароля -->
+    <div id="passwordModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <i data-lucide="lock" class="text-blue-600"></i>
+                    Доступ к экспорту данных
+                </h3>
+                <button onclick="closePasswordModal()" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <div class="mb-6">
+                <p class="text-gray-600 mb-4">Введите пароль администратора для экспорта данных в CSV:</p>
+                <div class="relative">
+                    <i data-lucide="key" class="absolute left-3 top-3 text-gray-400 w-5 h-5"></i>
+                    <input type="password" id="exportPassword" placeholder="Пароль администратора"
+                        class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        onkeypress="if(event.key === 'Enter') validatePassword()" />
+                </div>
+                <p id="passwordError" class="hidden text-red-500 text-sm mt-2 flex items-center gap-1">
+                    <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                    Неверный пароль. Доступ запрещён.
+                </p>
+                <p class="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                    <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                    Доступ к экспорту данных имеет только администратор системы.
+                </p>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="validatePassword()"
+                    class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center justify-center gap-2">
+                    <i data-lucide="check" class="w-5 h-5"></i>
+                    Подтвердить
+                </button>
+                <button onclick="closePasswordModal()"
+                    class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors font-semibold">
+                    Отмена
+                </button>
             </div>
         </div>
     </div>
 
     <script>
-        const { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } = Recharts;
+        // Проверка загрузки Chart.js
+        console.log('Checking Chart.js availability...');
+        console.log('Chart object:', typeof Chart);
+
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js is not available! Charts will not be displayed.');
+        } else {
+            console.log('Chart.js loaded successfully');
+        }
+
+        // Глобальные переменные для хранения экземпляров графиков
+        let priceChartInstance = null;
+        let volumeChartInstance = null;
 
         // База данных компаний
         const companiesDatabase = [
@@ -147,30 +237,30 @@
                 name: "СИБУР Холдинг",
                 size: "Крупная",
                 type: "Производитель",
-                products: ["Полипропилен", "Полиэтилен", "МТБЭ", "Бутадиен"],
-                region: "Тюменская обл.",
+                products: ["Полипропилен", "Полиэтилен", "МТБЭ", "Бутадиен", "Бензол", "Фенол", "Стирол"],
+                region: "Тобольск",
                 revenue: 1200,
-                assetId: "СИБУР Холдинг_Тюменская обл."
+                assetId: "SIBUR_TOBOLSK"
             },
             {
                 id: 2,
                 name: "Нижнекамскнефтехим",
                 size: "Крупная",
                 type: "Производитель",
-                products: ["Синтетические каучуки", "Полиэтилен", "Стирол"],
-                region: "Татарстан",
+                products: ["Синтетические каучуки", "Полиэтилен", "Стирол", "Полистирол", "АБС-пластик"],
+                region: "Нижнекамск",
                 revenue: 800,
-                assetId: "Нижнекамскнефтехим_Татарстан"
+                assetId: "NIZHNEKAMSKNEFTEKHIM"
             },
             {
                 id: 3,
-                name: "Ангарская НХК (Роснефть)",
+                name: "Ангарская НХК",
                 size: "Крупная",
                 type: "Производитель",
-                products: ["Нефтепродукты", "Полимеры", "Ароматика"],
-                region: "Восточная Сибирь",
+                products: ["Полипропилен", "Полиэтилен", "Бензол", "Толуол", "Ксилолы"],
+                region: "Ангарск",
                 revenue: 650,
-                assetId: "Ангарская НХК (Роснефть)_Восточная Сибирь"
+                assetId: "ANHK"
             },
             {
                 id: 4,
@@ -178,9 +268,9 @@
                 size: "Крупная",
                 type: "Производитель",
                 products: ["Полипропилен", "Полиэтилен"],
-                region: "Тюменская обл.",
+                region: "Тобольск",
                 revenue: 550,
-                assetId: "ЗапСибНефтехим_Тюменская обл."
+                assetId: "ZAPSIBNEFTEKHIM"
             },
             {
                 id: 5,
@@ -188,9 +278,9 @@
                 size: "Крупная",
                 type: "Производитель",
                 products: ["Полипропилен", "Бутиловые каучуки", "МТБЭ"],
-                region: "Самарская обл.",
+                region: "Новокуйбышевск",
                 revenue: 480,
-                assetId: "Новокуйбышевская НХК_Самарская обл."
+                assetId: "NOVOKUYB"
             },
             {
                 id: 6,
@@ -198,9 +288,9 @@
                 size: "Крупная",
                 type: "Производитель",
                 products: ["Полипропилен", "Полиэтилен"],
-                region: "Ставропольский край",
+                region: "Будённовск",
                 revenue: 420,
-                assetId: "Ставролен_Ставропольский край"
+                assetId: "STAVROLEN"
             },
             {
                 id: 7,
@@ -208,9 +298,9 @@
                 size: "Крупная",
                 type: "Производитель",
                 products: ["ПЭВД", "Полистирол"],
-                region: "Ленинградская обл.",
+                region: "Усть-Луга",
                 revenue: 380,
-                assetId: "Балтийский Химический Комплекс_Ленинградская обл."
+                assetId: "BALTIC_CHEMICAL"
             },
             {
                 id: 8,
@@ -218,9 +308,9 @@
                 size: "Средняя",
                 type: "Производитель",
                 products: ["Каучуки", "Антиоксиданты", "МТБЭ"],
-                region: "Башкортостан",
+                region: "Стерлитамак",
                 revenue: 280,
-                assetId: "Стерлитамакский НХЗ_Башкортостан"
+                assetId: "STERLITAMAK_NHZ"
             },
             {
                 id: 9,
@@ -228,9 +318,149 @@
                 size: "Средняя",
                 type: "Производитель",
                 products: ["Кокс", "Бензол", "Нафталин"],
-                region: "Кемеровская обл.",
+                region: "Кемерово",
                 revenue: 220,
-                assetId: "Кемеровский КХЗ_Кемеровская обл."
+                assetId: "KEMEROVO_KHZ"
+            },
+            {
+                id: 10,
+                name: "Казаньоргсинтез",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Полиэтилен", "Этилен", "Пропилен", "Изопрен"],
+                region: "Казань",
+                revenue: 600,
+                assetId: "KAZANORG"
+            },
+            {
+                id: 11,
+                name: "Татнефть-Нефтехим",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Полипропилен", "Бензол", "Параксилол", "Базовые масла"],
+                region: "Нижнекамск",
+                revenue: 750,
+                assetId: "TATNEFT_NK"
+            },
+            {
+                id: 12,
+                name: "Уралхим",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Аммиак", "Карбамид", "Аммиачная селитра", "Капролактам"],
+                region: "Кирово-Чепецк",
+                revenue: 520,
+                assetId: "URALCHEM"
+            },
+            {
+                id: 13,
+                name: "Уфаоргсинтез",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Фенол", "Ацетон", "Бисфенол А", "Поликарбонаты"],
+                region: "Уфа",
+                revenue: 450,
+                assetId: "UFAORG"
+            },
+            {
+                id: 14,
+                name: "ТАИФ-НК",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Полипропилен", "Автобензины", "Дизельное топливо", "Битум"],
+                region: "Нижнекамск",
+                revenue: 680,
+                assetId: "TAIF_NK"
+            },
+            {
+                id: 15,
+                name: "ЕвроХим",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Аммиак", "Карбамид", "Аммиачная селитра", "NPK удобрения"],
+                region: "Кингисепп",
+                revenue: 580,
+                assetId: "EVROKHIM"
+            },
+            {
+                id: 16,
+                name: "Полипластик",
+                size: "Средняя",
+                type: "Производитель",
+                products: ["ПЭВД", "Полистирол", "Ударопрочный полистирол"],
+                region: "Волгоград",
+                revenue: 320,
+                assetId: "POLIPLASTIK"
+            },
+            {
+                id: 17,
+                name: "Роснефть",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Автобензины", "Дизельное топливо", "Авиакеросин", "Базовые масла"],
+                region: "Москва",
+                revenue: 2500,
+                assetId: "ROSNEFT"
+            },
+            {
+                id: 18,
+                name: "Газпромнефть",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Автобензины", "Дизельное топливо", "Авиакеросин", "Базовые масла"],
+                region: "Санкт-Петербург",
+                revenue: 2200,
+                assetId: "GAZPROMNEFT"
+            },
+            {
+                id: 19,
+                name: "Татнефть",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Нефть сырая", "Автобензины", "Параксилол", "Бензол"],
+                region: "Альметьевск",
+                revenue: 1800,
+                assetId: "TATNEFT"
+            },
+            {
+                id: 20,
+                name: "Сургутнефтегаз",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Нефть сырая", "Газовый конденсат", "Природный газ"],
+                region: "Сургут",
+                revenue: 1600,
+                assetId: "SURGURNEFT"
+            },
+            {
+                id: 21,
+                name: "Лукойл",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Автобензины", "Дизельное топливо", "Авиакеросин", "Битум"],
+                region: "Москва",
+                revenue: 2400,
+                assetId: "LUKOIL"
+            },
+            {
+                id: 22,
+                name: "Новатэк",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["СПГ", "Газовый конденсат", "СУГ", "Природный газ"],
+                region: "Ямал",
+                revenue: 1900,
+                assetId: "NOVATEK"
+            },
+            {
+                id: 23,
+                name: "Восточная НХК",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Автобензины", "Дизельное топливо", "Авиакеросин", "Битум"],
+                region: "Находка",
+                revenue: 540,
+                assetId: "VOSTOCHNAYA"
             }
         ];
 
@@ -242,7 +472,16 @@
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function () {
-            lucide.createIcons();
+            console.log('DOM loaded');
+            console.log('Companies database length:', companiesDatabase.length);
+            console.log('Lucide available:', typeof lucide !== 'undefined');
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
+            // Update total companies count
+            document.getElementById('totalCompanies').textContent = companiesDatabase.length;
 
             // Load companies
             loadCompanies();
@@ -252,6 +491,8 @@
 
             // Update company count
             updateCompanyCount();
+
+            console.log('Filtered companies:', filteredCompanies.length);
         });
 
         function setupEventListeners() {
@@ -262,7 +503,12 @@
         }
 
         function loadCompanies() {
+            console.log('Loading companies...', filteredCompanies.length);
             const companiesList = document.getElementById('companiesList');
+            if (!companiesList) {
+                console.error('Companies list element not found!');
+                return;
+            }
             companiesList.innerHTML = '';
 
             filteredCompanies.forEach(company => {
@@ -287,7 +533,7 @@
                         <div class="flex flex-wrap gap-1 mb-3">
                             ${company.products.map(product => `<span class="text-xs px-2 py-1 bg-white rounded border">${product}</span>`).join('')}
                         </div>
-                        <button onclick="selectCompany('${company.id}')" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                        <button onclick="selectCompany(${company.id})" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
                             <i data-lucide="trending-up" class="w-4 h-4"></i>
                             Анализировать данные
                         </button>
@@ -303,19 +549,29 @@
                     const isHidden = details.classList.contains('hidden');
                     details.classList.toggle('hidden');
                     icon.setAttribute('data-lucide', isHidden ? 'chevron-up' : 'chevron-down');
-                    lucide.createIcons();
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
                 });
 
                 companiesList.appendChild(companyDiv);
             });
 
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            console.log('Companies loaded:', filteredCompanies.length);
         }
 
         function selectCompany(companyId) {
+            console.log('selectCompany called with ID:', companyId);
             const company = companiesDatabase.find(c => c.id == companyId);
-            if (!company) return;
+            if (!company) {
+                console.error('Company not found:', companyId);
+                return;
+            }
 
+            console.log('Selected company:', company.name);
             selectedCompany = company;
             selectedProduct = company.products[0] || '';
             generateSyntheticData(company.id, selectedProduct);
@@ -358,6 +614,7 @@
         }
 
         function generateSyntheticData(companyId, product) {
+            console.log('generateSyntheticData called for company:', companyId, 'product:', product);
             const months = ['Янв 24', 'Фев 24', 'Мар 24', 'Апр 24', 'Май 24', 'Июн 24',
                 'Июл 24', 'Авг 24', 'Сен 24', 'Окт 24', 'Ноя 24'];
 
@@ -365,12 +622,14 @@
             const baseVolume = 1000 + Math.random() * 5000;
 
             priceData = months.map((month, i) => ({
-                month,
+                timestamp: month,
                 price: Math.round(basePrice * (1 + (Math.random() - 0.5) * 0.2)),
                 volume: Math.round(baseVolume * (1 + (Math.random() - 0.5) * 0.3))
             }));
 
             volumeData = [...priceData];
+
+            console.log('Generated synthetic data:', priceData.length, 'points');
 
             updateCharts();
             updateStats();
@@ -414,61 +673,173 @@
         }
 
         function updateCharts() {
+            console.log('updateCharts called');
+            if (typeof Chart === 'undefined') {
+                console.warn('Chart.js not loaded, skipping chart updates');
+                return;
+            }
             updatePriceChart();
             updateVolumeChart();
         }
 
         function updatePriceChart() {
             const chartContainer = document.getElementById('priceChart');
-            if (!chartContainer) return;
+            if (!chartContainer) {
+                console.warn('Price chart container not found');
+                return;
+            }
 
-            const chart = React.createElement(LineChart, { width: 800, height: 300, data: priceData }, [
-                React.createElement(CartesianGrid, { key: 'grid', strokeDasharray: '3 3' }),
-                React.createElement(XAxis, { key: 'x', dataKey: 'timestamp' }),
-                React.createElement(YAxis, { key: 'y' }),
-                React.createElement(Tooltip, {
-                    key: 'tooltip',
-                    formatter: (value) => [`${value.toLocaleString()} ₽/тонна`, 'Цена']
-                }),
-                React.createElement(Legend, { key: 'legend' }),
-                React.createElement(Line, {
-                    key: 'line',
-                    type: 'monotone',
-                    dataKey: 'price',
-                    stroke: '#3b82f6',
-                    strokeWidth: 2,
-                    name: 'Цена'
-                })
-            ]);
+            if (typeof Chart === 'undefined') {
+                console.warn('Chart.js not available');
+                chartContainer.innerHTML = '<div class="text-center text-gray-500 py-12">График недоступен</div>';
+                return;
+            }
 
-            ReactDOM.render(chart, chartContainer);
+            console.log('Updating price chart with data:', priceData.length, 'points');
+            console.log('Sample data:', priceData[0]);
+
+            // Очистка старого графика
+            chartContainer.innerHTML = '<canvas id="priceChartCanvas"></canvas>';
+
+            // Уничтожить старый экземпляр графика если существует
+            if (priceChartInstance) {
+                priceChartInstance.destroy();
+            }
+
+            try {
+                const ctx = document.getElementById('priceChartCanvas').getContext('2d');
+                priceChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: priceData.map(d => d.timestamp),
+                        datasets: [{
+                            label: 'Цена',
+                            data: priceData.map(d => d.price),
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return 'Цена: ' + context.parsed.y.toLocaleString() + ' ₽/тонна';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                ticks: {
+                                    callback: function (value) {
+                                        return value.toLocaleString() + ' ₽';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Устанавливаем высоту canvas
+                document.getElementById('priceChartCanvas').style.height = '320px';
+
+                console.log('Price chart rendered successfully');
+            } catch (error) {
+                console.error('Error rendering price chart:', error);
+                chartContainer.innerHTML = '<div class="text-center text-red-500 py-12">Ошибка отображения графика</div>';
+            }
         }
 
         function updateVolumeChart() {
             const chartContainer = document.getElementById('volumeChart');
-            if (!chartContainer) return;
+            if (!chartContainer) {
+                console.warn('Volume chart container not found');
+                return;
+            }
 
-            const chart = React.createElement(BarChart, { width: 800, height: 300, data: volumeData }, [
-                React.createElement(CartesianGrid, { key: 'grid', strokeDasharray: '3 3' }),
-                React.createElement(XAxis, { key: 'x', dataKey: 'timestamp' }),
-                React.createElement(YAxis, { key: 'y' }),
-                React.createElement(Tooltip, {
-                    key: 'tooltip',
-                    formatter: (value) => [`${value.toLocaleString()} тонн`, 'Объем']
-                }),
-                React.createElement(Legend, { key: 'legend' }),
-                React.createElement(Bar, {
-                    key: 'bar',
-                    dataKey: 'volume',
-                    fill: '#10b981',
-                    name: 'Объем'
-                })
-            ]);
+            if (typeof Chart === 'undefined') {
+                console.warn('Chart.js not available');
+                chartContainer.innerHTML = '<div class="text-center text-gray-500 py-12">График недоступен</div>';
+                return;
+            }
 
-            ReactDOM.render(chart, chartContainer);
+            console.log('Updating volume chart with data:', volumeData.length, 'points');
+            console.log('Sample data:', volumeData[0]);
+
+            // Очистка старого графика
+            chartContainer.innerHTML = '<canvas id="volumeChartCanvas"></canvas>';
+
+            // Уничтожить старый экземпляр графика если существует
+            if (volumeChartInstance) {
+                volumeChartInstance.destroy();
+            }
+
+            try {
+                const ctx = document.getElementById('volumeChartCanvas').getContext('2d');
+                volumeChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: volumeData.map(d => d.timestamp),
+                        datasets: [{
+                            label: 'Объём',
+                            data: volumeData.map(d => d.volume),
+                            backgroundColor: '#10b981',
+                            borderColor: '#059669',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return 'Объём: ' + context.parsed.y.toLocaleString() + ' тонн';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function (value) {
+                                        return value.toLocaleString() + ' т';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Устанавливаем высоту canvas
+                document.getElementById('volumeChartCanvas').style.height = '320px';
+
+                console.log('Volume chart rendered successfully');
+            } catch (error) {
+                console.error('Error rendering volume chart:', error);
+                chartContainer.innerHTML = '<div class="text-center text-red-500 py-12">Ошибка отображения графика</div>';
+            }
         }
 
         function updateStats() {
+            console.log('updateStats called, priceData length:', priceData.length);
             if (priceData.length > 0) {
                 const avgPrice = Math.round(priceData.reduce((a, b) => a + b.price, 0) / priceData.length);
                 const avgVolume = Math.round(volumeData.reduce((a, b) => a + b.volume, 0) / volumeData.length);
@@ -482,6 +853,10 @@
                 document.getElementById('avgPrice').textContent = `${avgPrice.toLocaleString()} ₽`;
                 document.getElementById('avgVolume').textContent = `${avgVolume.toLocaleString()} т`;
                 document.getElementById('dataPeriod').textContent = `${hoursDiff} ч`;
+
+                console.log('Stats updated - Avg Price:', avgPrice, 'Avg Volume:', avgVolume, 'Period:', hoursDiff);
+            } else {
+                console.warn('No price data available for stats');
             }
         }
 
@@ -503,10 +878,93 @@
         }
 
         function updateCompanyCount() {
-            document.getElementById('companyCount').textContent = filteredCompanies.length;
+            const count = filteredCompanies.length;
+            console.log('Updating company count:', count);
+            const countElement = document.getElementById('companyCount');
+            if (countElement) {
+                countElement.textContent = count;
+            } else {
+                console.error('Company count element not found!');
+            }
+        }
+
+        // Пароль администратора для экспорта данных теперь хранится в переменной окружения
+        // и проверяется через API
+
+        function openPasswordModal() {
+            document.getElementById('passwordModal').classList.remove('hidden');
+            document.getElementById('exportPassword').value = '';
+            document.getElementById('passwordError').classList.add('hidden');
+            document.getElementById('exportPassword').focus();
+            lucide.createIcons();
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.add('hidden');
+            document.getElementById('exportPassword').value = '';
+            document.getElementById('passwordError').classList.add('hidden');
+        }
+
+        async function validatePassword() {
+            const password = document.getElementById('exportPassword').value;
+            const errorElement = document.getElementById('passwordError');
+            const input = document.getElementById('exportPassword');
+
+            try {
+                // Отправить запрос на сервер для проверки пароля
+                const response = await fetch('http://localhost:8080/api/v1/auth/verify-export-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    console.log('Password correct, proceeding with export');
+                    closePasswordModal();
+                    performExportToCSV();
+                } else {
+                    console.log('Incorrect password');
+                    errorElement.textContent = 'Неверный пароль. Попробуйте снова.';
+                    errorElement.classList.remove('hidden');
+                    input.value = '';
+                    input.focus();
+
+                    // Встряхнуть поле ввода для визуального эффекта
+                    input.classList.add('animate-shake');
+                    setTimeout(() => input.classList.remove('animate-shake'), 500);
+
+                    lucide.createIcons();
+                }
+            } catch (error) {
+                console.error('Error verifying password:', error);
+                errorElement.textContent = 'Ошибка соединения с сервером.';
+                errorElement.classList.remove('hidden');
+                input.value = '';
+                input.focus();
+
+                // Встряхнуть поле ввода для визуального эффекта
+                input.classList.add('animate-shake');
+                setTimeout(() => input.classList.remove('animate-shake'), 500);
+
+                lucide.createIcons();
+            }
         }
 
         function exportToCSV() {
+            if (!selectedCompany || priceData.length === 0) {
+                alert('Нет данных для экспорта. Пожалуйста, выберите компанию.');
+                return;
+            }
+
+            // Открыть модальное окно для ввода пароля
+            openPasswordModal();
+        }
+
+        function performExportToCSV() {
             if (!selectedCompany || priceData.length === 0) return;
 
             const headers = ['Дата', 'Продукт', 'Цена (руб/тонна)', 'Объем (тонн)'];
@@ -527,6 +985,34 @@
             link.click();
         }
 
+        function changePassword() {
+            const currentPassword = prompt('Введите текущий пароль для подтверждения:');
+
+            if (currentPassword !== EXPORT_PASSWORD) {
+                alert('❌ Неверный текущий пароль!');
+                return;
+            }
+
+            const newPassword = prompt('Введите новый пароль (минимум 6 символов):');
+
+            if (!newPassword || newPassword.length < 6) {
+                alert('❌ Пароль должен содержать минимум 6 символов!');
+                return;
+            }
+
+            const confirmPassword = prompt('Подтвердите новый пароль:');
+
+            if (newPassword !== confirmPassword) {
+                alert('❌ Пароли не совпадают!');
+                return;
+            }
+
+            // Изменяем пароль (в реальном приложении это должно сохраняться на сервере)
+            window.EXPORT_PASSWORD = newPassword;
+            alert('✅ Пароль успешно изменён!\n\nНовый пароль: ' + newPassword + '\n\nНе забудьте его!');
+            console.log('Password changed successfully');
+        }
+
         function getSizeClass(size) {
             switch (size) {
                 case 'Крупная': return 'bg-green-100 text-green-700';
@@ -536,8 +1022,6 @@
             }
         }
     </script>
-    <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
 </body>
 
 </html>

@@ -64,6 +64,10 @@ pnpm-debug.log*
 .env.local
 .env.*.local
 
+# Admin credentials (security)
+ADMIN_CREDENTIALS.md
+SECURITY_UPDATE.md
+
 # Editor directories and files
 .idea/
 .vscode/

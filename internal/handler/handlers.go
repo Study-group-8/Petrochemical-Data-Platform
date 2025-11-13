@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"crypto/subtle"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -96,4 +98,31 @@ func (h *Handler) HandleWebSocket(c *gin.Context) {
 	// Placeholder for WebSocket implementation
 	// In production, this would upgrade to WebSocket and stream real-time data
 	c.JSON(http.StatusNotImplemented, gin.H{"message": "WebSocket not implemented yet"})
+}
+
+// VerifyExportPassword handles POST /api/v1/auth/verify-export-password
+func (h *Handler) VerifyExportPassword(c *gin.Context) {
+	var req struct {
+		Password string `json:"password" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Password is required"})
+		return
+	}
+
+	// Get password from environment variable
+	adminPassword := os.Getenv("ADMIN_EXPORT_PASSWORD")
+	if adminPassword == "" {
+		h.logger.Error("ADMIN_EXPORT_PASSWORD environment variable not set")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server configuration error"})
+		return
+	}
+
+	// Use constant-time comparison to prevent timing attacks
+	if subtle.ConstantTimeCompare([]byte(req.Password), []byte(adminPassword)) == 1 {
+		c.JSON(http.StatusOK, gin.H{"success": true})
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Invalid password"})
+	}
 }

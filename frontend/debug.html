@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест - Мониторинг нефтехимического рынка России</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 p-6">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold mb-4">Мониторинг нефтехимического рынка России</h1>
+
+        <div class="bg-white rounded-lg shadow p-6 mb-4">
+            <h2 class="text-xl font-bold mb-4">Компании (<span id="companyCount">0</span>)</h2>
+            <div id="companiesList" class="space-y-2">
+                <!-- Companies will be loaded here -->
+            </div>
+        </div>
+
+        <div class="bg-blue-50 rounded-lg p-4">
+            <p><strong>База компаний:</strong> <span id="totalCompanies">0</span> компаний</p>
+        </div>
+    </div>
+
+    <script>
+        console.log('Script started');
+
+        // База данных компаний
+        const companiesDatabase = [
+            {
+                id: 1,
+                name: "СИБУР Холдинг",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Полипропилен", "Полиэтилен"],
+                region: "Тобольск"
+            },
+            {
+                id: 2,
+                name: "Нижнекамскнефтехим",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Синтетические каучуки"],
+                region: "Нижнекамск"
+            },
+            {
+                id: 3,
+                name: "Казаньоргсинтез",
+                size: "Крупная",
+                type: "Производитель",
+                products: ["Полиэтилен", "Этилен"],
+                region: "Казань"
+            }
+        ];
+
+        console.log('Companies database:', companiesDatabase.length);
+
+        let filteredCompanies = [...companiesDatabase];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('DOM loaded');
+
+            // Update total
+            document.getElementById('totalCompanies').textContent = companiesDatabase.length;
+
+            // Load companies
+            loadCompanies();
+
+            // Update count
+            updateCompanyCount();
+        });
+
+        function loadCompanies() {
+            console.log('Loading companies...');
+            const companiesList = document.getElementById('companiesList');
+            companiesList.innerHTML = '';
+
+            filteredCompanies.forEach(company => {
+                const companyDiv = document.createElement('div');
+                companyDiv.className = 'border border-gray-200 rounded p-4 hover:bg-gray-50';
+                companyDiv.innerHTML = `
+                    <h3 class="font-bold">${company.name}</h3>
+                    <p class="text-sm text-gray-600">${company.region}</p>
+                    <div class="mt-2">
+                        <span class="text-xs px-2 py-1 rounded bg-green-100 text-green-700">${company.size}</span>
+                    </div>
+                `;
+                companiesList.appendChild(companyDiv);
+            });
+
+            console.log('Companies loaded:', filteredCompanies.length);
+        }
+
+        function updateCompanyCount() {
+            document.getElementById('companyCount').textContent = filteredCompanies.length;
+            console.log('Count updated:', filteredCompanies.length);
+        }
+    </script>
+</body>
+
+</html>

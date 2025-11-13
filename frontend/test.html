@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Тест компаний</title>
+</head>
+
+<body>
+    <h1>Тест загрузки компаний</h1>
+    <div id="result"></div>
+
+    <script>
+        const companies = [
+            { id: 1, name: "СИБУР Холдинг" },
+            { id: 2, name: "Нижнекамскнефтехим" },
+            { id: 3, name: "Ангарская НХК" }
+        ];
+
+        document.getElementById('result').innerHTML = `
+            <p>Количество компаний: ${companies.length}</p>
+            <ul>
+                ${companies.map(c => `<li>${c.name}</li>`).join('')}
+            </ul>
+        `;
+
+        console.log('Test loaded successfully', companies);
+    </script>
+</body>
+
+</html>

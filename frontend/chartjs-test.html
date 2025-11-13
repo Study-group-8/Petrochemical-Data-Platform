@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест Chart.js (альтернатива)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .chart-container {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Тест работы Chart.js (надёжная альтернатива Recharts)</h1>
+    <div id="status"></div>
+
+    <h2>График линий (Цены)</h2>
+    <div class="chart-container">
+        <canvas id="lineChart"></canvas>
+    </div>
+
+    <h2>График столбцов (Объёмы)</h2>
+    <div class="chart-container">
+        <canvas id="barChart"></canvas>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+
+        // Проверка загрузки Chart.js
+        console.log('Chart:', typeof Chart);
+
+        if (typeof Chart === 'undefined') {
+            statusDiv.innerHTML = '<div class="status error"><strong>✗ Ошибка:</strong> Chart.js не загружен!</div>';
+        } else {
+            statusDiv.innerHTML = '<div class="status success"><strong>✓ Chart.js загружен успешно!</strong></div>';
+
+            // Тестовые данные
+            const labels = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'];
+            const priceData = [65000, 67000, 63000, 70000, 72000, 68000];
+            const volumeData = [3200, 3400, 3100, 3600, 3800, 3500];
+
+            // График линий
+            const lineCtx = document.getElementById('lineChart').getContext('2d');
+            new Chart(lineCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Цена (₽/тонна)',
+                        data: priceData,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' ₽';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function (value) {
+                                    return value.toLocaleString() + ' ₽';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // График столбцов
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Объём (тонн)',
+                        data: volumeData,
+                        backgroundColor: '#10b981',
+                        borderColor: '#059669',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' т';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function (value) {
+                                    return value.toLocaleString() + ' т';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Устанавливаем высоту canvas
+            document.getElementById('lineChart').style.height = '300px';
+            document.getElementById('barChart').style.height = '300px';
+
+            statusDiv.innerHTML += '<div class="status success"><strong>✓ Графики отрендерены успешно!</strong></div>';
+            console.log('Charts rendered successfully');
+        }
+    </script>
+</body>
+
+</html>
