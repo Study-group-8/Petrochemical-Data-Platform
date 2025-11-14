@@ -25,9 +25,9 @@ func (h *Handler) GetAssets(c *gin.Context) {
 	c.JSON(http.StatusOK, assets)
 }
 
-// GetTelemetry handles GET /api/v1/telemetry/{sensor_id}
+// GetTelemetry handles GET /api/v1/telemetry/{company_id}
 func (h *Handler) GetTelemetry(c *gin.Context) {
-	sensorID := c.Param("sensor_id")
+	companyID := c.Param("company_id")
 
 	// Parse query parameters for time range
 	startStr := c.DefaultQuery("start", "")
@@ -56,16 +56,16 @@ func (h *Handler) GetTelemetry(c *gin.Context) {
 		end = time.Now()
 	}
 
-	data, err := h.telemetryService.GetTelemetry(c.Request.Context(), sensorID, start, end)
+	data, err := h.telemetryService.GetTelemetry(c.Request.Context(), companyID, start, end)
 	if err != nil {
-		h.logger.Error("Failed to get telemetry", zap.Error(err), zap.String("sensor_id", sensorID))
+		h.logger.Error("Failed to get telemetry", zap.Error(err), zap.String("company_id", companyID))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve telemetry data"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"sensor_id": sensorID,
-		"data":      data,
+		"company_id": companyID,
+		"data":       data,
 	})
 }
 

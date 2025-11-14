@@ -23,7 +23,7 @@ func main() {
 		// Check if the requested file exists
 		path := filepath.Join(exeDir, "frontend", r.URL.Path)
 		if _, err := os.Stat(path); os.IsNotExist(err) {
-			// If file doesn't exist, serve index.html (for SPA routing)
+			// If file doesn't exist, serve index.html
 			http.ServeFile(w, r, filepath.Join(exeDir, "frontend", "index.html"))
 		} else {
 			// Serve the requested file

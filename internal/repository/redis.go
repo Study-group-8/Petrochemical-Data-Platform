@@ -43,7 +43,7 @@ func (r *RedisRepository) Close() {
 
 // CacheDataPoint caches a data point with expiration
 func (r *RedisRepository) CacheDataPoint(ctx context.Context, data parser.DataPoint, expiration time.Duration) error {
-	key := fmt.Sprintf("sensor:%s:latest", data.SensorID)
+	key := fmt.Sprintf("company:%s:product:%s:latest", data.CompanyID, data.ProductName)
 
 	dataJSON, err := json.Marshal(data)
 	if err != nil {
@@ -51,7 +51,9 @@ func (r *RedisRepository) CacheDataPoint(ctx context.Context, data parser.DataPo
 	}
 
 	if err := r.client.Set(ctx, key, dataJSON, expiration).Err(); err != nil {
-		r.logger.Error("Failed to cache data point", zap.Error(err), zap.String("sensor_id", data.SensorID))
+		r.logger.Error("Failed to cache data point", zap.Error(err),
+			zap.String("company_id", data.CompanyID),
+			zap.String("product", data.ProductName))
 		return err
 	}
 
@@ -59,8 +61,8 @@ func (r *RedisRepository) CacheDataPoint(ctx context.Context, data parser.DataPo
 }
 
 // GetCachedDataPoint retrieves a cached data point
-func (r *RedisRepository) GetCachedDataPoint(ctx context.Context, sensorID string) (*parser.DataPoint, error) {
-	key := fmt.Sprintf("sensor:%s:latest", sensorID)
+func (r *RedisRepository) GetCachedDataPoint(ctx context.Context, companyID, productName string) (*parser.DataPoint, error) {
+	key := fmt.Sprintf("company:%s:product:%s:latest", companyID, productName)
 
 	dataJSON, err := r.client.Get(ctx, key).Result()
 	if err == redis.Nil {
@@ -76,8 +78,6 @@ func (r *RedisRepository) GetCachedDataPoint(ctx context.Context, sensorID strin
 
 	return &data, nil
 }
-
-// CacheAsset caches asset metadata
 func (r *RedisRepository) CacheAsset(ctx context.Context, asset Asset, expiration time.Duration) error {
 	key := fmt.Sprintf("asset:%s", asset.ID)
 

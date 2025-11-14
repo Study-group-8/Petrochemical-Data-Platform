@@ -27,7 +27,7 @@ func SetupRoutes(r *gin.Engine, handler *Handler) {
 	api := r.Group("/api/v1")
 	{
 		api.GET("/assets", handler.GetAssets)
-		api.GET("/telemetry/:sensor_id", handler.GetTelemetry)
+		api.GET("/telemetry/:company_id", handler.GetTelemetry)
 		api.POST("/control", handler.PostControl)
 		api.POST("/auth/verify-export-password", handler.VerifyExportPassword)
 	}

@@ -3,11 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"petrochemical-data-platform/internal/domain"
-	"petrochemical-data-platform/internal/pkg/simulator"
 	"petrochemical-data-platform/internal/repository"
 
 	"go.uber.org/zap"
@@ -82,116 +80,6 @@ func (s *AssetService) CreateAsset(ctx context.Context, asset domain.Asset) erro
 	return nil
 }
 
-// InitializeAssetsFromSensors создает активы на основе конфигураций датчиков
-func (s *AssetService) InitializeAssetsFromSensors(ctx context.Context, sensors []simulator.SensorConfig) error {
-	for _, sensor := range sensors {
-		// Extract company, location, and equipment info from sensor ID and description
-		company, location, equipment := s.extractAssetInfo(sensor)
-
-		assetID := fmt.Sprintf("%s_%s", company, location)
-		assetName := fmt.Sprintf("%s - %s", company, location)
-
-		asset := domain.Asset{
-			ID:       assetID,
-			Name:     assetName,
-			Type:     "Производственное оборудование",
-			Location: location,
-			Status:   "active",
-			Specifications: map[string]interface{}{
-				"company":   company,
-				"equipment": equipment,
-				"products":  s.getCompanyProducts(company),
-			},
-			Sensors:   []string{sensor.ID},
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		}
-
-		if err := s.CreateAsset(ctx, asset); err != nil {
-			s.logger.Warn("Failed to create asset", zap.Error(err), zap.String("asset_id", assetID))
-			// Continue with other assets
-		}
-	}
-
-	return nil
-}
-
-// extractAssetInfo извлекает компанию, местоположение и оборудование из описания датчика
-func (s *AssetService) extractAssetInfo(sensor simulator.SensorConfig) (company, location, equipment string) {
-	description := sensor.Description
-
-	// Extract company name
-	if strings.Contains(description, "СИБУР") {
-		company = "СИБУР Холдинг"
-		if strings.Contains(description, "Тобольск") {
-			location = "Тюменская обл."
-		}
-	} else if strings.Contains(description, "Нижнекамскнефтехим") {
-		company = "Нижнекамскнефтехим"
-		location = "Татарстан"
-	} else if strings.Contains(description, "Ангарская НХК") {
-		company = "Ангарская НХК (Роснефть)"
-		location = "Восточная Сибирь"
-	} else if strings.Contains(description, "ЗапСибНефтехим") {
-		company = "ЗапСибНефтехим"
-		location = "Тюменская обл."
-	} else if strings.Contains(description, "Новокуйбышевская НХК") {
-		company = "Новокуйбышевская НХК"
-		location = "Самарская обл."
-	} else if strings.Contains(description, "Ставролен") {
-		company = "Ставролен"
-		location = "Ставропольский край"
-	} else if strings.Contains(description, "Балтийский ХК") {
-		company = "Балтийский Химический Комплекс"
-		location = "Ленинградская обл."
-	} else if strings.Contains(description, "Стерлитамакский НХЗ") {
-		company = "Стерлитамакский НХЗ"
-		location = "Башкортостан"
-	} else if strings.Contains(description, "Кемеровский КХЗ") {
-		company = "Кемеровский КХЗ"
-		location = "Кемеровская обл."
-	}
-
-	// Extract equipment type
-	if strings.Contains(description, "Реактор") {
-		equipment = "Реактор"
-	} else if strings.Contains(description, "Колонна") {
-		equipment = "Колонна"
-	} else if strings.Contains(description, "Линия") {
-		equipment = "Производственная линия"
-	} else if strings.Contains(description, "Резервуар") {
-		equipment = "Резервуар"
-	} else if strings.Contains(description, "Силос") {
-		equipment = "Силос"
-	} else if strings.Contains(description, "Батарея") {
-		equipment = "Коксовая батарея"
-	} else {
-		equipment = "Оборудование"
-	}
-
-	return company, location, equipment
-}
-
-// getCompanyProducts возвращает продукты для данной компании
-func (s *AssetService) getCompanyProducts(company string) []string {
-	products := map[string][]string{
-		"СИБУР Холдинг":                  {"Полипропилен", "Полиэтилен", "МТБЭ", "Бутадиен"},
-		"Нижнекамскнефтехим":             {"Синтетические каучуки", "Полиэтилен", "Стирол"},
-		"Ангарская НХК (Роснефть)":       {"Нефтепродукты", "Полимеры", "Ароматика"},
-		"ЗапСибНефтехим":                 {"Полипропилен", "Полиэтилен"},
-		"Новокуйбышевская НХК":           {"Полипропилен", "Бутиловые каучуки", "МТБЭ"},
-		"Ставролен":                      {"Полипропилен", "Полиэтилен"},
-		"Балтийский Химический Комплекс": {"ПЭВД", "Полистирол"},
-		"Стерлитамакский НХЗ":            {"Каучуки", "Антиоксиданты", "МТБЭ"},
-		"Кемеровский КХЗ":                {"Кокс", "Бензол", "Нафталин"},
-	}
-
-	if prods, exists := products[company]; exists {
-		return prods
-	}
-	return []string{}
-}
-
 // TelemetryService обрабатывает операции с данными телеметрии
 type TelemetryService struct {
 	repo   *repository.ClickHouseRepository
@@ -206,15 +94,9 @@ func NewTelemetryService(repo *repository.ClickHouseRepository, logger *zap.Logg
 	}
 }
 
-// GetTelemetry получает данные телеметрии для датчика
-func (s *TelemetryService) GetTelemetry(ctx context.Context, sensorID string, start, end time.Time) ([]domain.TelemetryData, error) {
-	return s.repo.GetTelemetryData(ctx, sensorID, start, end)
-}
-
-// getUnitForSensor определяет подходящую единицу измерения на основе ID датчика
-func (s *TelemetryService) getUnitForSensor(sensorID string) string {
-	// All sensors show production volume in tons
-	return "тонны"
+// GetTelemetry получает данные производства/продаж для компании
+func (s *TelemetryService) GetTelemetry(ctx context.Context, companyID string, start, end time.Time) ([]domain.TelemetryData, error) {
+	return s.repo.GetTelemetryData(ctx, companyID, start, end)
 }
 
 // ControlService обрабатывает команды управления
