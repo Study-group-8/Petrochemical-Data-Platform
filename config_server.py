@@ -3,9 +3,14 @@ import hashlib
 from flask import Flask, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
+import os.path
 
-# Загрузка переменных окружения
-load_dotenv()
+# Загрузка переменных окружения (файл .env опционален)
+if os.path.exists('.env'):
+    load_dotenv()
+else:
+    # Используем дефолтные значения из переменных окружения или hardcoded defaults
+    pass
 
 app = Flask(__name__)
 CORS(app)  # Разрешаем CORS для фронтенда

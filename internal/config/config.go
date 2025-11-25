@@ -51,17 +51,30 @@ type MQTTConfig struct {
 	Password string `mapstructure:"password"`
 }
 
+// Load reads configuration from the default ./configs/config.yaml path.
 func Load() (*Config, error) {
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./configs")
+	return LoadFromPath("")
+}
 
-	if err := viper.ReadInConfig(); err != nil {
+// LoadFromPath reads configuration from an explicit file path. When path is empty
+// we fall back to the default search path used by Load().
+func LoadFromPath(path string) (*Config, error) {
+	v := viper.New()
+
+	if path != "" {
+		v.SetConfigFile(path)
+	} else {
+		v.SetConfigName("config")
+		v.SetConfigType("yaml")
+		v.AddConfigPath("./configs")
+	}
+
+	if err := v.ReadInConfig(); err != nil {
 		return nil, err
 	}
 
 	var cfg Config
-	if err := viper.Unmarshal(&cfg); err != nil {
+	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, err
 	}
 

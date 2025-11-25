@@ -102,21 +102,52 @@ func (r *ClickHouseRepository) GetTelemetryData(ctx context.Context, companyID s
 		results = append(results, data)
 	}
 
-	if len(results) == 0 {
-		// Return mock data if no real data found (for development)
-		r.logger.Info("No telemetry data found, returning mock data",
-			zap.String("company_id", companyID))
-		results = []domain.TelemetryData{
-			{
-				CompanyID:   companyID,
-				ProductName: "Полипропилен",
-				Value:       125.5,
-				Unit:        "т/час",
-				Timestamp:   time.Now(),
-				Quality:     1,
-			},
+	return results, nil
+}
+
+// HasTelemetryData проверяет, существуют ли записи телеметрии для компании
+func (r *ClickHouseRepository) HasTelemetryData(ctx context.Context, companyID string) (bool, error) {
+	query := `
+		SELECT count()
+		FROM petrochemical.telemetry
+		WHERE company_id = ?
+		LIMIT 1`
+
+	row := r.conn.QueryRow(ctx, query, companyID)
+	var count uint64
+	if err := row.Scan(&count); err != nil {
+		return false, fmt.Errorf("failed to count telemetry data: %w", err)
+	}
+
+	return count > 0, nil
+}
+
+// SaveTelemetryBatch сохраняет пакет данных телеметрии
+func (r *ClickHouseRepository) SaveTelemetryBatch(ctx context.Context, data []domain.TelemetryData) error {
+	if len(data) == 0 {
+		return nil
+	}
+
+	batch, err := r.conn.PrepareBatch(ctx, `
+		INSERT INTO petrochemical.telemetry
+		(company_id, product_name, value, unit, timestamp, quality)`)
+	if err != nil {
+		return fmt.Errorf("failed to prepare batch insert: %w", err)
+	}
+
+	for _, d := range data {
+		if err := batch.Append(d.CompanyID, d.ProductName, d.Value, d.Unit, d.Timestamp, d.Quality); err != nil {
+			return fmt.Errorf("failed to append telemetry data: %w", err)
 		}
 	}
 
-	return results, nil
+	if err := batch.Send(); err != nil {
+		return fmt.Errorf("failed to send telemetry batch: %w", err)
+	}
+
+	r.logger.Info("Generated telemetry data inserted",
+		zap.String("company_id", data[0].CompanyID),
+		zap.Int("records", len(data)))
+
+	return nil
 }
