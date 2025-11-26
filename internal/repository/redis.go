@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	"petrochemical-data-platform/internal/pkg/parser"
+	"petrochemical-data-platform/internal/domain"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
+
+const assetsCacheKey = "assets:all"
 
 // RedisRepository обрабатывает операции Redis для кэширования
 type RedisRepository struct {
@@ -41,8 +43,8 @@ func (r *RedisRepository) Close() {
 	r.client.Close()
 }
 
-// CacheDataPoint caches a data point with expiration
-func (r *RedisRepository) CacheDataPoint(ctx context.Context, data parser.DataPoint, expiration time.Duration) error {
+// CacheDataPoint caches a telemetry data point with expiration
+func (r *RedisRepository) CacheDataPoint(ctx context.Context, data domain.TelemetryData, expiration time.Duration) error {
 	key := fmt.Sprintf("company:%s:product:%s:latest", data.CompanyID, data.ProductName)
 
 	dataJSON, err := json.Marshal(data)
@@ -60,8 +62,8 @@ func (r *RedisRepository) CacheDataPoint(ctx context.Context, data parser.DataPo
 	return nil
 }
 
-// GetCachedDataPoint retrieves a cached data point
-func (r *RedisRepository) GetCachedDataPoint(ctx context.Context, companyID, productName string) (*parser.DataPoint, error) {
+// GetCachedDataPoint retrieves a cached telemetry data point
+func (r *RedisRepository) GetCachedDataPoint(ctx context.Context, companyID, productName string) (*domain.TelemetryData, error) {
 	key := fmt.Sprintf("company:%s:product:%s:latest", companyID, productName)
 
 	dataJSON, err := r.client.Get(ctx, key).Result()
@@ -71,7 +73,7 @@ func (r *RedisRepository) GetCachedDataPoint(ctx context.Context, companyID, pro
 		return nil, err
 	}
 
-	var data parser.DataPoint
+	var data domain.TelemetryData
 	if err := json.Unmarshal([]byte(dataJSON), &data); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal cached data: %w", err)
 	}
@@ -94,6 +96,41 @@ func (r *RedisRepository) CacheAsset(ctx context.Context, asset Asset, expiratio
 	return nil
 }
 
+// CacheAssets stores the full list of assets for faster repeated reads
+func (r *RedisRepository) CacheAssets(ctx context.Context, assets []domain.Asset, expiration time.Duration) error {
+	data, err := json.Marshal(assets)
+	if err != nil {
+		return fmt.Errorf("failed to marshal assets list: %w", err)
+	}
+
+	if err := r.client.Set(ctx, assetsCacheKey, data, expiration).Err(); err != nil {
+		r.logger.Error("Failed to cache assets list", zap.Error(err))
+		return err
+	}
+	return nil
+}
+
+// GetCachedAssets returns cached list of assets if present
+func (r *RedisRepository) GetCachedAssets(ctx context.Context) ([]domain.Asset, error) {
+	dataJSON, err := r.client.Get(ctx, assetsCacheKey).Result()
+	if err == redis.Nil {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	var assets []domain.Asset
+	if err := json.Unmarshal([]byte(dataJSON), &assets); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal cached assets: %w", err)
+	}
+	return assets, nil
+}
+
+// InvalidateAssetsCache removes the cached list of assets
+func (r *RedisRepository) InvalidateAssetsCache(ctx context.Context) error {
+	return r.client.Del(ctx, assetsCacheKey).Err()
+}
+
 // GetCachedAsset retrieves a cached asset
 func (r *RedisRepository) GetCachedAsset(ctx context.Context, assetID string) (*Asset, error) {
 	key := fmt.Sprintf("asset:%s", assetID)
@@ -113,8 +150,8 @@ func (r *RedisRepository) GetCachedAsset(ctx context.Context, assetID string) (*
 	return &asset, nil
 }
 
-// PublishData publishes data to Redis pub/sub channel
-func (r *RedisRepository) PublishData(ctx context.Context, channel string, data parser.DataPoint) error {
+// PublishData publishes telemetry data to Redis pub/sub channel
+func (r *RedisRepository) PublishData(ctx context.Context, channel string, data domain.TelemetryData) error {
 	dataJSON, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("failed to marshal data for publish: %w", err)

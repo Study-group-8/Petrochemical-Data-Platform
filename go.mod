@@ -6,7 +6,6 @@ toolchain go1.24.10
 
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.40.3
-	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/gin-gonic/gin v1.10.1
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/redis/go-redis/v9 v9.16.0
@@ -33,7 +32,6 @@ require (
 	github.com/go-playground/validator/v10 v10.26.0 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
