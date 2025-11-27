@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"petrochemical-data-platform/internal/app/bootstrap"
-	"petrochemical-data-platform/internal/service"
+	"github.com/Study-group-8/Petrochemical-Data-Platform/internal/app/bootstrap"
+	"github.com/Study-group-8/Petrochemical-Data-Platform/internal/service"
 
 	"go.uber.org/zap"
 )

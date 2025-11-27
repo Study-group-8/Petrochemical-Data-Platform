@@ -11,9 +11,9 @@ import (
 	"syscall"
 	"time"
 
-	"petrochemical-data-platform/internal/app/bootstrap"
-	"petrochemical-data-platform/internal/handler"
-	"petrochemical-data-platform/internal/service"
+	"github.com/Study-group-8/Petrochemical-Data-Platform/internal/app/bootstrap"
+	"github.com/Study-group-8/Petrochemical-Data-Platform/internal/handler"
+	"github.com/Study-group-8/Petrochemical-Data-Platform/internal/service"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
