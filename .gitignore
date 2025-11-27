@@ -17,11 +17,6 @@ go.work
 # Dependency directories
 vendor/
 
-# Build artifacts
-api
-simulator
-parser
-
 # Configuration files (keep template)
 configs/config.local.yaml
 

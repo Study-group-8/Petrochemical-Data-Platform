@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"petrochemical-data-platform/internal/domain"
+	"github.com/Study-group-8/Petrochemical-Data-Platform/internal/domain"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"go.uber.org/zap"

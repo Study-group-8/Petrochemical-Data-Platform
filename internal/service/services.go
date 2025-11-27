@@ -10,8 +10,8 @@ import (
 	"sort"
 	"time"
 
-	"petrochemical-data-platform/internal/domain"
-	"petrochemical-data-platform/internal/repository"
+	"github.com/Study-group-8/Petrochemical-Data-Platform/internal/domain"
+	"github.com/Study-group-8/Petrochemical-Data-Platform/internal/repository"
 
 	"go.uber.org/zap"
 )

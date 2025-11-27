@@ -1,4 +1,4 @@
-module petrochemical-data-platform
+module github.com/Study-group-8/Petrochemical-Data-Platform
 
 go 1.24.0
 
