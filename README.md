@@ -9,7 +9,7 @@
 
 ## 🌐 Live Demo
 
-**🚀 [Попробовать прямо сейчас](https://study-group-8.github.io/Petrochemical-Data-Platform/)**
+**🚀 [Мониторинг нефтехимического рынка России](https://study-group-8.github.io/Petrochemical-Data-Platform/)**
 
 Демо версия работает с синтетическими данными и не требует установки backend сервисов.
 
