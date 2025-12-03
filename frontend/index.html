@@ -1230,113 +1230,15 @@
             document.getElementById('passwordError').classList.add('hidden');
         }
 
-        async function validatePassword() {
-            const password = document.getElementById('exportPassword').value;
-            const errorElement = document.getElementById('passwordError');
-            const input = document.getElementById('exportPassword');
-
-            try {
-                // Отправить запрос на сервер для проверки пароля
-                const response = await fetch('http://localhost:8080/api/v1/auth/verify-export-password', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ password })
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    console.log('Password correct, proceeding with export');
-                    closePasswordModal();
-                    performExportToCSV();
-                } else {
-                    console.log('Incorrect password');
-                    errorElement.textContent = 'Неверный пароль. Попробуйте снова.';
-                    errorElement.classList.remove('hidden');
-                    input.value = '';
-                    input.focus();
-
-                    // Встряхнуть поле ввода для визуального эффекта
-                    input.classList.add('animate-shake');
-                    setTimeout(() => input.classList.remove('animate-shake'), 500);
-
-                    lucide.createIcons();
-                }
-            } catch (error) {
-                console.error('Error verifying password:', error);
-                errorElement.textContent = 'Ошибка соединения с сервером.';
-                errorElement.classList.remove('hidden');
-                input.value = '';
-                input.focus();
-
-                // Встряхнуть поле ввода для визуального эффекта
-                input.classList.add('animate-shake');
-                setTimeout(() => input.classList.remove('animate-shake'), 500);
-
-                lucide.createIcons();
-            }
-        }
-
         function exportToCSV() {
             if (!selectedCompany || priceData.length === 0) {
                 alert('Нет данных для экспорта. Пожалуйста, выберите компанию.');
                 return;
             }
 
-            // Открыть модальное окно для ввода пароля
             openPasswordModal();
         }
 
-        function performExportToCSV() {
-            if (!selectedCompany || priceData.length === 0) return;
-
-            const headers = ['Дата', 'Продукт', 'Цена (руб/тонна)', 'Объем (тонн)'];
-            const rows = priceData.map(d => [
-                d.timestamp,
-                selectedProduct,
-                d.price,
-                d.volume
-            ]);
-
-            const csvContent = headers.join(',') + '\n' +
-                rows.map(r => r.join(',')).join('\n');
-
-            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `${selectedCompany.name}_${selectedProduct}_${new Date().toISOString().split('T')[0]}.csv`;
-            link.click();
-        }
-
-        function changePassword() {
-            const currentPassword = prompt('Введите текущий пароль для подтверждения:');
-
-            if (currentPassword !== EXPORT_PASSWORD) {
-                alert('❌ Неверный текущий пароль!');
-                return;
-            }
-
-            const newPassword = prompt('Введите новый пароль (минимум 6 символов):');
-
-            if (!newPassword || newPassword.length < 6) {
-                alert('❌ Пароль должен содержать минимум 6 символов!');
-                return;
-            }
-
-            const confirmPassword = prompt('Подтвердите новый пароль:');
-
-            if (newPassword !== confirmPassword) {
-                alert('❌ Пароли не совпадают!');
-                return;
-            }
-
-            // Изменяем пароль (в реальном приложении это должно сохраняться на сервере)
-            window.EXPORT_PASSWORD = newPassword;
-            alert('✅ Пароль успешно изменён!\n\nНовый пароль: ' + newPassword + '\n\nНе забудьте его!');
-            console.log('Password changed successfully');
-        }
 
         // Функции для работы с модальным окном выбора дат
         function openCustomDateModal() {
